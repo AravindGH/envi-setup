@@ -1,0 +1,145 @@
+controller :
+
+//db.js
+var sqlDb = require("mssql");
+var env = require("../env");
+
+exports.executeSql = function (sql, callback) {
+    var conn = new sqlDb.Connection(env.dbConfig);
+    conn.connect().then(function () {
+        var req = new sqlDb.Request(conn);
+        req.query(sql).then(function (recordset) {
+            conn.close();
+            callback(recordset);
+        }).catch(function (err) {
+            console.log(err);
+            callback(null, err);
+        });
+    }).catch(function (err) {
+        console.log(err);
+        callback(null, err);
+    });
+};
+
+//server.js
+var express = require('express');
+var env = require("../env");
+var emp = require("../services/interrogatories");
+var bodyParser = require('body-parser');
+
+var app = express();
+var router = express.Router();
+
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
+
+router.get('/', function (req, res) {
+    res.json({ msg: "Use '/api/interrogatories' to get all interrogatories" });
+});
+
+//get request..
+router.get('/api/interrogatories', function (req, res) {
+   emp.getList(req, res);
+});
+
+//post request..
+router.post('/api/interrogatories/add', function (req, res) {
+   emp.add(req, res);
+});
+
+app.use('/', router);
+
+app.listen(env.webPort, function () {
+    console.log("Started listening at: " + env.webPort);
+});
+
+Folder : services
+
+
+Interrogatories.js
+//service methods: GET and POST..
+
+var db = require("../controller/db");
+var util = require("util");
+var env = require("../env");
+
+/**************************Get Request********************/
+
+exports.getList = function (req, res) {
+    db.executeSql("select * from dbo.Interrogatories", function (data, err) {
+        if (err) {
+            res.status(500).json(err);
+        }
+        else {
+            res.json(data);
+        }
+    });
+};
+
+/*********************Put Request***************************/
+
+exports.add = function (req, res) {
+    try {
+        var sqlDb = require("mssql");
+        var conn = new sqlDb.Connection(env.dbConfig);
+        var data = req.body
+        var values = [];
+        conn.connect().then(function () {
+            var request = new sqlDb.Request(conn);
+            for (var i = 0; i < data.length; i++) {
+                console.log(data[i].id, data[i].comments);
+                var temp1 = data[i].id;
+                var temp2 = data[i].status;
+                var temp3 = data[i].comments;
+                console.log(temp1, temp2,temp3);
+                var sql1 = "INSERT INTO dbo.Interrogatories (id,status,comments) VALUES";
+                sql1 += util.format("(%d,'%s','%s')", temp1,temp2,temp3);
+                request.query(sql1).then(function (err, recordset) {
+                    if (err) console.log(err);
+                    res.send(recordset);
+                });
+            }
+            conn.close();
+        })
+    }
+    catch (ex) {
+        res.status(500).json({ msg: ex.message });
+    }
+
+};
+
+/***************************************************************/
+
+
+app.js
+require("./controller/server.js");
+
+env.js
+
+exports.dbConfig = {
+    database: 'mcas',
+    server: "localhost\\SQLEXPRESS",
+    user: 'sa',
+    password: '0000',
+    port: 1433
+};
+
+exports.webPort = 9000;
+
+
+package.json:
+{
+  "name": "interrogatory-services",
+  "version": "0.0.0",
+  "description": "InterrogatoryServices allowed methods: get,put",
+  "main": "app.js",
+  "author": {
+    "name": "aravind.murugesan@bcbsfl.com",
+    "email": "aravind.murugesan@bcbsfl.com"
+  },
+  "dependencies": {
+    "body-parser": "^1.14.0",
+    "express": "^4.13.3",
+    "mssql": "^2.3.1"
+  }
+}
