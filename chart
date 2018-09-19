@@ -1,0 +1,37 @@
+const options = {
+  tooltips: { enabled: true },
+  scales: {
+    xAxes: [{
+      gridLines: { display: false, color: 'grey', },
+      ticks: { fontColor: '#3C3C3C', fontSize: 14, },
+    }],
+    yAxes: [{
+      scaleLabel: { display: true, labelString: 'Color Strength', fontSize: 14, },
+      ticks: {
+        min: 0,
+        max: 10,
+      },
+      gridLines: {
+        display: false,
+        offsetGridLines: true,
+        color: '3C3C3C',
+      },
+    }],
+  },
+  legend: {
+    display: false
+  },
+  dragData: true,
+
+  dragX: true,
+  dragY: false,
+  onDragStart: function (e) {
+    console.log(e)
+  },
+  onDrag: function (e, datasetIndex, index, value) {
+    console.log(datasetIndex, index, value)
+  },
+  onDragEnd: function (e, datasetIndex, index, value) {
+    console.log(datasetIndex, index, value)
+  }
+};
